@@ -34,17 +34,17 @@
 // busybee_returncode occupies [4608, 4864)
 enum busybee_returncode
 {
-    BUSYBEE_SUCCESS     = 4608,
-    BUSYBEE_SHUTDOWN    = 4609,
-    BUSYBEE_POLLFAILED  = 4610,
-    BUSYBEE_DISRUPTED   = 4611,
-    BUSYBEE_ADDFDFAIL   = 4612,
-    BUSYBEE_TIMEOUT     = 4613,
-    BUSYBEE_EXTERNAL    = 4614,
-    BUSYBEE_INTERRUPTED = 4615
+	BUSYBEE_SUCCESS     = 4608,
+	BUSYBEE_SHUTDOWN    = 4609,
+	BUSYBEE_POLLFAILED  = 4610,
+	BUSYBEE_DISRUPTED   = 4611,
+	BUSYBEE_ADDFDFAIL   = 4612,
+	BUSYBEE_TIMEOUT     = 4613,
+	BUSYBEE_EXTERNAL    = 4614,
+	BUSYBEE_INTERRUPTED = 4615
 };
 
-std::ostream&
-operator << (std::ostream& lhs, busybee_returncode rhs);
+std::ostream &
+operator << (std::ostream &lhs, busybee_returncode rhs);
 
 #endif // busybee_returncode_h_

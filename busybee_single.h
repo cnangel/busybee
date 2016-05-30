@@ -42,55 +42,55 @@
 
 class busybee_single
 {
-    public:
-        busybee_single(const po6::net::hostname& host);
-        busybee_single(const po6::net::location& host);
-        ~busybee_single() throw ();
+public:
+	busybee_single(const po6::net::hostname &host);
+	busybee_single(const po6::net::location &host);
+	~busybee_single() throw ();
 
-    public:
-        void set_timeout(int timeout);
+public:
+	void set_timeout(int timeout);
 
-    public:
-        // These are valid so long as send has been called, and the most recent
-        // call to send or recv returned SUCCESS
-        const po6::net::location& remote() { return m_remote; }
-        int poll_fd() { return m_connection.get(); }
-        // This is valid so long as recv has been called, and the most recent call
-        // to send or recv returned SUCCESS
-        uint64_t token() { return m_token; }
+public:
+	// These are valid so long as send has been called, and the most recent
+	// call to send or recv returned SUCCESS
+	const po6::net::location &remote() { return m_remote; }
+	int poll_fd() { return m_connection.get(); }
+	// This is valid so long as recv has been called, and the most recent call
+	// to send or recv returned SUCCESS
+	uint64_t token() { return m_token; }
 
-    public:
+public:
 #ifdef _MSC_VER
-        busybee_returncode send(std::shared_ptr<e::buffer> msg);
-        busybee_returncode recv(std::shared_ptr<e::buffer>* msg);
+	busybee_returncode send(std::shared_ptr<e::buffer> msg);
+	busybee_returncode recv(std::shared_ptr<e::buffer> *msg);
 #else
-        busybee_returncode send(std::auto_ptr<e::buffer> msg);
-        busybee_returncode recv(std::auto_ptr<e::buffer>* msg);
+	busybee_returncode send(std::auto_ptr<e::buffer> msg);
+	busybee_returncode recv(std::auto_ptr<e::buffer> *msg);
 #endif
 
-    private:
-        void reset();
+private:
+	void reset();
 
-    private:
-        int m_timeout;
-        enum { USE_HOSTNAME, USE_LOCATION } m_type;
-        po6::net::hostname m_host;
-        po6::net::location m_loc;
-        po6::net::location m_remote;
-        po6::net::socket m_connection;
-        uint32_t m_recv_partial_header_sz;
-        uint8_t m_recv_partial_header[sizeof(uint32_t)];
+private:
+	int m_timeout;
+	enum { USE_HOSTNAME, USE_LOCATION } m_type;
+	po6::net::hostname m_host;
+	po6::net::location m_loc;
+	po6::net::location m_remote;
+	po6::net::socket m_connection;
+	uint32_t m_recv_partial_header_sz;
+	uint8_t m_recv_partial_header[sizeof(uint32_t)];
 #ifdef _MSC_VER
-        std::shared_ptr<e::buffer> m_recv_partial_msg;
+	std::shared_ptr<e::buffer> m_recv_partial_msg;
 #else
-        std::auto_ptr<e::buffer> m_recv_partial_msg;
+	std::auto_ptr<e::buffer> m_recv_partial_msg;
 #endif
-        uint32_t m_flags;
-        uint64_t m_token;
+	uint32_t m_flags;
+	uint64_t m_token;
 
-    private:
-        busybee_single(const busybee_single&);
-        busybee_single& operator = (const busybee_single&);
+private:
+	busybee_single(const busybee_single &);
+	busybee_single &operator = (const busybee_single &);
 };
 
 #endif // busybee_single_h_

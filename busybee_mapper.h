@@ -36,12 +36,12 @@
 
 class busybee_mapper
 {
-    public:
-        busybee_mapper();
-        virtual ~busybee_mapper() throw ();
+public:
+	busybee_mapper();
+	virtual ~busybee_mapper() throw ();
 
-    public:
-        virtual bool lookup(uint64_t server_id, po6::net::location* bound_to) = 0;
+public:
+	virtual bool lookup(uint64_t server_id, po6::net::location *bound_to) = 0;
 };
 
 #endif // busybee_mapper_h_

@@ -43,31 +43,31 @@
 // BusyBee
 #include "busybee_single.h"
 
-busybee_single :: busybee_single(const po6::net::hostname& host)
-    : m_timeout(-1)
-    , m_type(USE_HOSTNAME)
-    , m_host(host)
-    , m_loc()
-    , m_remote()
-    , m_connection()
-    , m_recv_partial_header_sz()
-    , m_recv_partial_msg()
-    , m_flags(0)
-    , m_token(0)
+busybee_single :: busybee_single(const po6::net::hostname &host)
+	: m_timeout(-1)
+	, m_type(USE_HOSTNAME)
+	, m_host(host)
+	, m_loc()
+	, m_remote()
+	, m_connection()
+	, m_recv_partial_header_sz()
+	, m_recv_partial_msg()
+	, m_flags(0)
+	, m_token(0)
 {
 }
 
-busybee_single :: busybee_single(const po6::net::location& loc)
-    : m_timeout(-1)
-    , m_type(USE_LOCATION)
-    , m_host()
-    , m_loc(loc)
-    , m_remote()
-    , m_connection()
-    , m_recv_partial_header_sz()
-    , m_recv_partial_msg()
-    , m_flags(0)
-    , m_token(0)
+busybee_single :: busybee_single(const po6::net::location &loc)
+	: m_timeout(-1)
+	, m_type(USE_LOCATION)
+	, m_host()
+	, m_loc(loc)
+	, m_remote()
+	, m_connection()
+	, m_recv_partial_header_sz()
+	, m_recv_partial_msg()
+	, m_flags(0)
+	, m_token(0)
 {
 }
 
@@ -78,200 +78,178 @@ busybee_single :: ~busybee_single() throw ()
 void
 busybee_single :: set_timeout(int timeout)
 {
-    m_timeout = timeout;
+	m_timeout = timeout;
 }
 
 busybee_returncode
 busybee_single :: send(std::auto_ptr<e::buffer> msg)
 {
-    // Pack the size into the header
-    msg->pack() << static_cast<uint32_t>(msg->size());
-
-    if (m_connection.get() < 0)
-    {
-        if (m_type == USE_HOSTNAME)
-        {
-            m_remote = m_host.connect(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, &m_connection);
-
-            if (m_connection.get() < 0)
-            {
-                return BUSYBEE_DISRUPTED;
-            }
-        }
-        else if (m_type == USE_LOCATION)
-        {
-            if (!m_connection.reset(m_loc.address.family(), SOCK_STREAM, IPPROTO_TCP) ||
-                !m_connection.connect(m_loc) ||
-                !m_connection.getpeername(&m_remote))
-            {
-                return BUSYBEE_DISRUPTED;
-            }
-        }
-        else
-        {
-            abort();
-        }
-
+	// Pack the size into the header
+	msg->pack() << static_cast<uint32_t>(msg->size());
+	if (m_connection.get() < 0)
+	{
+		if (m_type == USE_HOSTNAME)
+		{
+			m_remote = m_host.connect(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, &m_connection);
+			if (m_connection.get() < 0)
+			{
+				return BUSYBEE_DISRUPTED;
+			}
+		}
+		else if (m_type == USE_LOCATION)
+		{
+			if (!m_connection.reset(m_loc.address.family(), SOCK_STREAM, IPPROTO_TCP) ||
+			    !m_connection.connect(m_loc) ||
+			    !m_connection.getpeername(&m_remote))
+			{
+				return BUSYBEE_DISRUPTED;
+			}
+		}
+		else
+		{
+			abort();
+		}
 #ifdef HAVE_SO_NOSIGPIPE
-        int sigpipeopt = 1;
-        soc.set_sockopt(SOL_SOCKET, SO_NOSIGPIPE, &sigpipeopt, sizeof(sigpipeopt));
+		int sigpipeopt = 1;
+		soc.set_sockopt(SOL_SOCKET, SO_NOSIGPIPE, &sigpipeopt, sizeof(sigpipeopt));
 #endif // HAVE_SO_NOSIGPIPE
-        uint32_t sz = sizeof(uint32_t) + sizeof(uint64_t);
-        char buf[sizeof(uint32_t) + sizeof(uint64_t)];
-        sz |= 0x80000000ULL;
-        char* ptr = buf;
-        ptr = e::pack32be(sz, ptr);
-        ptr = e::pack64be(0, ptr);
-
-        if (m_connection.xwrite(buf, ptr - buf) != ptr - buf)
-        {
-            reset();
-            return BUSYBEE_DISRUPTED;
-        }
-    }
-
-    if (m_connection.xwrite(msg->data(), msg->size()) != ssize_t(msg->size()))
-    {
-        reset();
-        return BUSYBEE_DISRUPTED;
-    }
-
-    return BUSYBEE_SUCCESS;
+		uint32_t sz = sizeof(uint32_t) + sizeof(uint64_t);
+		char buf[sizeof(uint32_t) + sizeof(uint64_t)];
+		sz |= 0x80000000ULL;
+		char *ptr = buf;
+		ptr = e::pack32be(sz, ptr);
+		ptr = e::pack64be(0, ptr);
+		if (m_connection.xwrite(buf, ptr - buf) != ptr - buf)
+		{
+			reset();
+			return BUSYBEE_DISRUPTED;
+		}
+	}
+	if (m_connection.xwrite(msg->data(), msg->size()) != ssize_t(msg->size()))
+	{
+		reset();
+		return BUSYBEE_DISRUPTED;
+	}
+	return BUSYBEE_SUCCESS;
 }
 
 busybee_returncode
-busybee_single :: recv(std::auto_ptr<e::buffer>* msg)
+busybee_single :: recv(std::auto_ptr<e::buffer> *msg)
 {
-    while (true)
-    {
-        if (m_connection.get() < 0)
-        {
-            reset();
-            return BUSYBEE_DISRUPTED;
-        }
-
-        size_t to_read = 0;
-        uint8_t* ptr = NULL;
-
-        if (m_recv_partial_msg.get())
-        {
-            to_read = m_recv_partial_msg->capacity() - m_recv_partial_msg->size();
-            ptr = m_recv_partial_msg->data() + m_recv_partial_msg->size();
-        }
-        else
-        {
-            to_read = sizeof(uint32_t) - m_recv_partial_header_sz;
-            ptr = m_recv_partial_header + m_recv_partial_header_sz;
-        }
-
-        pollfd pfd;
-        pfd.fd = m_connection.get();
-        pfd.events = POLLIN;
-        pfd.revents = 0;
-        int status = poll(&pfd, 1, m_timeout);
-
-        if (status < 0 && EINTR)
-        {
-            continue;
-        }
-        else if (status < 0)
-        {
-            return BUSYBEE_POLLFAILED;
-        }
-        else if (status == 0)
-        {
-            return BUSYBEE_TIMEOUT;
-        }
-
-        assert(status == 1);
-        int flags = 0;
+	while (true)
+	{
+		if (m_connection.get() < 0)
+		{
+			reset();
+			return BUSYBEE_DISRUPTED;
+		}
+		size_t to_read = 0;
+		uint8_t *ptr = NULL;
+		if (m_recv_partial_msg.get())
+		{
+			to_read = m_recv_partial_msg->capacity() - m_recv_partial_msg->size();
+			ptr = m_recv_partial_msg->data() + m_recv_partial_msg->size();
+		}
+		else
+		{
+			to_read = sizeof(uint32_t) - m_recv_partial_header_sz;
+			ptr = m_recv_partial_header + m_recv_partial_header_sz;
+		}
+		pollfd pfd;
+		pfd.fd = m_connection.get();
+		pfd.events = POLLIN;
+		pfd.revents = 0;
+		int status = poll(&pfd, 1, m_timeout);
+		if (status < 0 && EINTR)
+		{
+			continue;
+		}
+		else if (status < 0)
+		{
+			return BUSYBEE_POLLFAILED;
+		}
+		else if (status == 0)
+		{
+			return BUSYBEE_TIMEOUT;
+		}
+		assert(status == 1);
+		int flags = 0;
 #ifdef HAVE_MSG_NOSIGNAL
-        flags |= MSG_NOSIGNAL;
+		flags |= MSG_NOSIGNAL;
 #endif // HAVE_MSG_NOSIGNAL
-
-        ssize_t amt = m_connection.xrecv(ptr, to_read, flags);
-
-        if (amt < 0 && errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            reset();
-            return BUSYBEE_DISRUPTED;
-        }
-        else if (amt < 0)
-        {
-            continue;
-        }
-        else if (amt == 0)
-        {
-            reset();
-            return BUSYBEE_DISRUPTED;
-        }
-
-        if (m_recv_partial_msg.get())
-        {
-            m_recv_partial_msg->resize(m_recv_partial_msg->size() + amt);
-        }
-        else
-        {
-            m_recv_partial_header_sz += amt;
-
-            if (m_recv_partial_header_sz == sizeof(uint32_t))
-            {
-                m_recv_partial_header_sz = 0;
-                uint32_t sz;
-                e::unpack32be(m_recv_partial_header, &sz);
-
-                m_flags = sz & 0xe0000000UL;
-                sz &= 0x1fffffffUL;
-
-                if (sz < sizeof(uint32_t))
-                {
-                    reset();
-                    return BUSYBEE_DISRUPTED;
-                }
-
-                m_recv_partial_msg.reset(e::buffer::create(sz));
-                memmove(m_recv_partial_msg->data(), m_recv_partial_header, sizeof(uint32_t));
-                m_recv_partial_msg->resize(sizeof(uint32_t));
-            }
-        }
-
-        // Handle newly-created, 0-length messages (otherwise we could nest
-        // above)
-        if (m_recv_partial_msg.get() && m_recv_partial_msg->size() == m_recv_partial_msg->capacity())
-        {
-            if ((m_flags & 0x80000000ULL))
-            {
-                if (m_recv_partial_msg->size() != sizeof(uint32_t) + sizeof(uint64_t))
-                {
-                    reset();
-                    return BUSYBEE_DISRUPTED;
-                }
-
-                e::unpack64be(m_recv_partial_msg->data() + sizeof(uint32_t), &m_token);
-            }
-
-            if (m_flags)
-            {
-                m_recv_partial_msg.reset();
-            }
-            else
-            {
-                *msg = m_recv_partial_msg;
-                return BUSYBEE_SUCCESS;
-            }
-        }
-    }
+		ssize_t amt = m_connection.xrecv(ptr, to_read, flags);
+		if (amt < 0 && errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)
+		{
+			reset();
+			return BUSYBEE_DISRUPTED;
+		}
+		else if (amt < 0)
+		{
+			continue;
+		}
+		else if (amt == 0)
+		{
+			reset();
+			return BUSYBEE_DISRUPTED;
+		}
+		if (m_recv_partial_msg.get())
+		{
+			m_recv_partial_msg->resize(m_recv_partial_msg->size() + amt);
+		}
+		else
+		{
+			m_recv_partial_header_sz += amt;
+			if (m_recv_partial_header_sz == sizeof(uint32_t))
+			{
+				m_recv_partial_header_sz = 0;
+				uint32_t sz;
+				e::unpack32be(m_recv_partial_header, &sz);
+				m_flags = sz & 0xe0000000UL;
+				sz &= 0x1fffffffUL;
+				if (sz < sizeof(uint32_t))
+				{
+					reset();
+					return BUSYBEE_DISRUPTED;
+				}
+				m_recv_partial_msg.reset(e::buffer::create(sz));
+				memmove(m_recv_partial_msg->data(), m_recv_partial_header, sizeof(uint32_t));
+				m_recv_partial_msg->resize(sizeof(uint32_t));
+			}
+		}
+		// Handle newly-created, 0-length messages (otherwise we could nest
+		// above)
+		if (m_recv_partial_msg.get() && m_recv_partial_msg->size() == m_recv_partial_msg->capacity())
+		{
+			if ((m_flags & 0x80000000ULL))
+			{
+				if (m_recv_partial_msg->size() != sizeof(uint32_t) + sizeof(uint64_t))
+				{
+					reset();
+					return BUSYBEE_DISRUPTED;
+				}
+				e::unpack64be(m_recv_partial_msg->data() + sizeof(uint32_t), &m_token);
+			}
+			if (m_flags)
+			{
+				m_recv_partial_msg.reset();
+			}
+			else
+			{
+				*msg = m_recv_partial_msg;
+				return BUSYBEE_SUCCESS;
+			}
+		}
+	}
 }
 
 void
 busybee_single :: reset()
 {
-    PO6_EXPLICITLY_IGNORE(m_connection.shutdown(SHUT_RDWR));
-    m_connection.close();
-
-    m_remote = po6::net::location();
-    m_recv_partial_header_sz = 0;
-    m_recv_partial_msg.reset();
-    m_flags = 0;
-    m_token = 0;
+	PO6_EXPLICITLY_IGNORE(m_connection.shutdown(SHUT_RDWR));
+	m_connection.close();
+	m_remote = po6::net::location();
+	m_recv_partial_header_sz = 0;
+	m_recv_partial_msg.reset();
+	m_flags = 0;
+	m_token = 0;
 }

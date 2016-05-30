@@ -43,55 +43,48 @@
 #include "busybee_utils.h"
 
 bool
-busybee_discover(po6::net::ipaddr* ip)
+busybee_discover(po6::net::ipaddr *ip)
 {
-    struct ifaddrs* ifa = NULL;
-
-    if (getifaddrs(&ifa) < 0 || !ifa)
-    {
-        return false;
-    }
-
-    e::guard g = e::makeguard(freeifaddrs, ifa);
-    g.use_variable();
-
-    for (struct ifaddrs* ifap = ifa; ifap; ifap = ifap->ifa_next)
-    {
-        if (strncmp(ifap->ifa_name, "lo", 2) == 0)
-        {
-            continue;
-        }
-
-        if (ifap->ifa_addr->sa_family == AF_INET)
-        {
-            po6::net::location loc;
-
-            if (loc.set(ifap->ifa_addr, sizeof(sockaddr_in)))
-            {
-                *ip = loc.address;
-                return true;
-            }
-        }
-        else if (ifap->ifa_addr->sa_family == AF_INET6)
-        {
-            po6::net::location loc;
-
-            if (loc.set(ifap->ifa_addr, sizeof(sockaddr_in6)))
-            {
-                *ip = loc.address;
-                return true;
-            }
-        }
-    }
-
-    errno = 0;
-    return false;
+	struct ifaddrs *ifa = NULL;
+	if (getifaddrs(&ifa) < 0 || !ifa)
+	{
+		return false;
+	}
+	e::guard g = e::makeguard(freeifaddrs, ifa);
+	g.use_variable();
+	for (struct ifaddrs *ifap = ifa; ifap; ifap = ifap->ifa_next)
+	{
+		if (strncmp(ifap->ifa_name, "lo", 2) == 0)
+		{
+			continue;
+		}
+		if (ifap->ifa_addr->sa_family == AF_INET)
+		{
+			po6::net::location loc;
+			if (loc.set(ifap->ifa_addr, sizeof(sockaddr_in)))
+			{
+				*ip = loc.address;
+				return true;
+			}
+		}
+		else if (ifap->ifa_addr->sa_family == AF_INET6)
+		{
+			po6::net::location loc;
+			if (loc.set(ifap->ifa_addr, sizeof(sockaddr_in6)))
+			{
+				*ip = loc.address;
+				return true;
+			}
+		}
+	}
+	errno = 0;
+	return false;
 }
 
 uint64_t
 busybee_generate_id()
 {
-    uint64_t x = 1;
-    x <<= 32;
-    return x | po6::time(); // XXX weak!
+	uint64_t x = 1;
+	x <<= 32;
+	return x | po6::time(); // XXX weak!
 }

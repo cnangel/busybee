@@ -32,7 +32,7 @@
 #include <po6/net/ipaddr.h>
 
 bool
-busybee_discover(po6::net::ipaddr* ip);
+busybee_discover(po6::net::ipaddr *ip);
 uint64_t
 busybee_generate_id();
 

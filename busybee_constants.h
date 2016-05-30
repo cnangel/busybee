@@ -38,14 +38,14 @@
 #define BUSYBEE_HEADER_SIZE sizeof(uint32_t)
 #define BUSYBEE_MAX_MSG_SIZE UINT32_MAX
 
-#ifndef HAVE_EPOLL_CTL 
-enum epoll_events 
+#ifndef HAVE_EPOLL_CTL
+enum epoll_events
 {
-    EPOLLIN = 1,
-    EPOLLOUT = 2,
-    EPOLLET = 4,
-    EPOLLERR = 8,
-    EPOLLHUP = 16
+	EPOLLIN = 1,
+	EPOLLOUT = 2,
+	EPOLLET = 4,
+	EPOLLERR = 8,
+	EPOLLHUP = 16
 };
 #endif
 

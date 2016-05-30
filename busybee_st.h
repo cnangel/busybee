@@ -50,80 +50,80 @@
 
 class busybee_st
 {
-    public:
-        busybee_st(busybee_mapper* mapper,
-                   uint64_t server_id);
-        ~busybee_st() throw ();
+public:
+	busybee_st(busybee_mapper *mapper,
+	           uint64_t server_id);
+	~busybee_st() throw ();
 
-    public:
-        void set_id(uint64_t server_id);
-        void set_timeout(int timeout);
-        int timeout() const { return m_timeout; }
-        void set_ignore_signals();
-        void unset_ignore_signals();
-        void add_signals();
+public:
+	void set_id(uint64_t server_id);
+	void set_timeout(int timeout);
+	int timeout() const { return m_timeout; }
+	void set_ignore_signals();
+	void unset_ignore_signals();
+	void add_signals();
 
-    public:
-        busybee_returncode set_external_fd(int fd);
+public:
+	busybee_returncode set_external_fd(int fd);
 
-    public:
-        busybee_returncode get_addr(uint64_t server_id, po6::net::location* addr);
-        int poll_fd();
-        busybee_returncode drop(uint64_t server_id);
-        busybee_returncode send(uint64_t server_id,
-                                std::auto_ptr<e::buffer> msg);
-        busybee_returncode recv(uint64_t* server_id,
-                                std::auto_ptr<e::buffer>* msg);
-        // like "recv", but never returns a message (therefore, never returns
-        // SUCCESS)---you can assert it.  This will *not* clear an event on
-        // poll_fd.
-        busybee_returncode recv_no_msg(uint64_t* server_id);
-        void reset();
+public:
+	busybee_returncode get_addr(uint64_t server_id, po6::net::location *addr);
+	int poll_fd();
+	busybee_returncode drop(uint64_t server_id);
+	busybee_returncode send(uint64_t server_id,
+	                        std::auto_ptr<e::buffer> msg);
+	busybee_returncode recv(uint64_t *server_id,
+	                        std::auto_ptr<e::buffer> *msg);
+	// like "recv", but never returns a message (therefore, never returns
+	// SUCCESS)---you can assert it.  This will *not* clear an event on
+	// poll_fd.
+	busybee_returncode recv_no_msg(uint64_t *server_id);
+	void reset();
 
-    private:
-        class channel;
-        struct recv_message;
-        struct send_message;
+private:
+	class channel;
+	struct recv_message;
+	struct send_message;
 
-    private:
-        int BUSYBEE_HIDDEN add_event(int fd, uint32_t events);
-        int BUSYBEE_HIDDEN wait_event(int* fd, uint32_t* events);
-        busybee_returncode BUSYBEE_HIDDEN get_channel(uint64_t server_id, channel** chan, uint64_t* chan_tag);
-        busybee_returncode BUSYBEE_HIDDEN setup_channel(po6::net::socket* soc, channel* chan);
-        busybee_returncode BUSYBEE_HIDDEN possibly_work_send_or_recv(channel* chan);
-        bool BUSYBEE_HIDDEN work_dispatch(channel* chan, uint32_t events, busybee_returncode* rc);
-        bool BUSYBEE_HIDDEN work_close(channel* chan, busybee_returncode* rc);
-        bool BUSYBEE_HIDDEN work_send(channel* chan, busybee_returncode* rc);
-        bool BUSYBEE_HIDDEN work_recv(channel* chan, busybee_returncode* rc);
-        bool BUSYBEE_HIDDEN state_transition(channel* chan, busybee_returncode* rc);
-        void BUSYBEE_HIDDEN handle_identify(channel* chan, bool* need_close, bool* clean_close);
-        void BUSYBEE_HIDDEN handle_fin(channel* chan, bool* need_close, bool* clean_close);
-        void BUSYBEE_HIDDEN handle_ack(channel* chan, bool* need_close, bool* clean_close);
-        bool BUSYBEE_HIDDEN send_finack(channel* chan);
+private:
+	int BUSYBEE_HIDDEN add_event(int fd, uint32_t events);
+	int BUSYBEE_HIDDEN wait_event(int *fd, uint32_t *events);
+	busybee_returncode BUSYBEE_HIDDEN get_channel(uint64_t server_id, channel **chan, uint64_t *chan_tag);
+	busybee_returncode BUSYBEE_HIDDEN setup_channel(po6::net::socket *soc, channel *chan);
+	busybee_returncode BUSYBEE_HIDDEN possibly_work_send_or_recv(channel *chan);
+	bool BUSYBEE_HIDDEN work_dispatch(channel *chan, uint32_t events, busybee_returncode *rc);
+	bool BUSYBEE_HIDDEN work_close(channel *chan, busybee_returncode *rc);
+	bool BUSYBEE_HIDDEN work_send(channel *chan, busybee_returncode *rc);
+	bool BUSYBEE_HIDDEN work_recv(channel *chan, busybee_returncode *rc);
+	bool BUSYBEE_HIDDEN state_transition(channel *chan, busybee_returncode *rc);
+	void BUSYBEE_HIDDEN handle_identify(channel *chan, bool *need_close, bool *clean_close);
+	void BUSYBEE_HIDDEN handle_fin(channel *chan, bool *need_close, bool *clean_close);
+	void BUSYBEE_HIDDEN handle_ack(channel *chan, bool *need_close, bool *clean_close);
+	bool BUSYBEE_HIDDEN send_finack(channel *chan);
 
-    private:
-        po6::io::fd m_epoll;
-        size_t m_channels_sz;
-        e::array_ptr<channel> m_channels;
-        static uint64_t hash(const uint64_t& r)
-        {
-            return r;
-        }
-        e::garbage_collector m_gc;
-        e::garbage_collector::thread_state m_gc_ts;
-        e::nwf_hash_map<uint64_t, uint64_t, hash> m_server2channel;
-        busybee_mapper* m_mapper;
-        uint64_t m_server_id;
-        uint32_t m_anon_id;
-        int m_timeout;
-        recv_message* m_recv_queue;
-        recv_message** m_recv_end;
-        sigset_t m_sigmask;
-        e::flagfd m_flagfd;
+private:
+	po6::io::fd m_epoll;
+	size_t m_channels_sz;
+	e::array_ptr<channel> m_channels;
+	static uint64_t hash(const uint64_t &r)
+	{
+		return r;
+	}
+	e::garbage_collector m_gc;
+	e::garbage_collector::thread_state m_gc_ts;
+	e::nwf_hash_map<uint64_t, uint64_t, hash> m_server2channel;
+	busybee_mapper *m_mapper;
+	uint64_t m_server_id;
+	uint32_t m_anon_id;
+	int m_timeout;
+	recv_message *m_recv_queue;
+	recv_message **m_recv_end;
+	sigset_t m_sigmask;
+	e::flagfd m_flagfd;
 
-    private:
-        busybee_st(const busybee_st&);
-        busybee_st& operator = (const busybee_st&);
+private:
+	busybee_st(const busybee_st &);
+	busybee_st &operator = (const busybee_st &);
 };
 
 #undef BUSYBEE_HIDDEN

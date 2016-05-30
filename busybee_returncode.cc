@@ -32,24 +32,23 @@
 #define xstr(x) str(x)
 #define stringify(x) case (x): lhs << xstr(x); break
 
-std::ostream&
-operator << (std::ostream& lhs, busybee_returncode rhs)
+std::ostream &
+operator << (std::ostream &lhs, busybee_returncode rhs)
 {
-    switch (rhs)
-    {
-        stringify(BUSYBEE_SUCCESS);
-        stringify(BUSYBEE_SHUTDOWN);
-        stringify(BUSYBEE_POLLFAILED);
-        stringify(BUSYBEE_DISRUPTED);
-        stringify(BUSYBEE_ADDFDFAIL);
-        stringify(BUSYBEE_TIMEOUT);
-        stringify(BUSYBEE_EXTERNAL);
-        stringify(BUSYBEE_INTERRUPTED);
-        default:
-            lhs << "unknown returncode";
-    }
-
-    return lhs;
+	switch (rhs)
+	{
+		stringify(BUSYBEE_SUCCESS);
+		stringify(BUSYBEE_SHUTDOWN);
+		stringify(BUSYBEE_POLLFAILED);
+		stringify(BUSYBEE_DISRUPTED);
+		stringify(BUSYBEE_ADDFDFAIL);
+		stringify(BUSYBEE_TIMEOUT);
+		stringify(BUSYBEE_EXTERNAL);
+		stringify(BUSYBEE_INTERRUPTED);
+	default:
+		lhs << "unknown returncode";
+	}
+	return lhs;
 }
 
 #undef stringify

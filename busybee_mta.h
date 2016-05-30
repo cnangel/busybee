@@ -51,107 +51,107 @@
 
 class busybee_mta
 {
-    public:
-        busybee_mta(e::garbage_collector* gc,
-                    busybee_mapper* mapper,
-                    const po6::net::location& bind_to,
-                    uint64_t server_id,
-                    size_t num_threads);
-        ~busybee_mta() throw ();
+public:
+	busybee_mta(e::garbage_collector *gc,
+	            busybee_mapper *mapper,
+	            const po6::net::location &bind_to,
+	            uint64_t server_id,
+	            size_t num_threads);
+	~busybee_mta() throw ();
 
-    public:
-        void shutdown();
-        // Enter a barrier.  All "num_threads" threads must enter the barrier
-        // before the caller will leave.  All other threads will remain in the
-        // barrier until "unpause" is called.  No locks will be held while
-        // threads are paused, so deadlock cannot occur.
-        void pause();
-        // Cause all threads to leave the barrier initiated by "pause".
-        void unpause();
-        // Wakeup threads.  Use when "deliver" is called by a thread that will
-        // never call "recv".
-        void wake_one();
+public:
+	void shutdown();
+	// Enter a barrier.  All "num_threads" threads must enter the barrier
+	// before the caller will leave.  All other threads will remain in the
+	// barrier until "unpause" is called.  No locks will be held while
+	// threads are paused, so deadlock cannot occur.
+	void pause();
+	// Cause all threads to leave the barrier initiated by "pause".
+	void unpause();
+	// Wakeup threads.  Use when "deliver" is called by a thread that will
+	// never call "recv".
+	void wake_one();
 
-    public:
-        void set_id(uint64_t server_id);
-        void set_timeout(int timeout); // call while paused
-        void set_ignore_signals();
-        void unset_ignore_signals();
-        void add_signals();
+public:
+	void set_id(uint64_t server_id);
+	void set_timeout(int timeout); // call while paused
+	void set_ignore_signals();
+	void unset_ignore_signals();
+	void add_signals();
 
-    public:
-        busybee_returncode get_addr(uint64_t server_id, po6::net::location* addr);
-        bool deliver(uint64_t server_id, std::auto_ptr<e::buffer> msg);
-        busybee_returncode drop(uint64_t server_id);
-        busybee_returncode send(uint64_t server_id,
-                                std::auto_ptr<e::buffer> msg);
-        busybee_returncode recv(e::garbage_collector::thread_state* ts,
-                                uint64_t* server_id,
-                                std::auto_ptr<e::buffer>* msg);
-        // like "recv", but never returns a message (therefore, never returns
-        // SUCCESS)---you can assert it.
-        busybee_returncode recv_no_msg(e::garbage_collector::thread_state* ts,
-                                       uint64_t* server_id);
+public:
+	busybee_returncode get_addr(uint64_t server_id, po6::net::location *addr);
+	bool deliver(uint64_t server_id, std::auto_ptr<e::buffer> msg);
+	busybee_returncode drop(uint64_t server_id);
+	busybee_returncode send(uint64_t server_id,
+	                        std::auto_ptr<e::buffer> msg);
+	busybee_returncode recv(e::garbage_collector::thread_state *ts,
+	                        uint64_t *server_id,
+	                        std::auto_ptr<e::buffer> *msg);
+	// like "recv", but never returns a message (therefore, never returns
+	// SUCCESS)---you can assert it.
+	busybee_returncode recv_no_msg(e::garbage_collector::thread_state *ts,
+	                               uint64_t *server_id);
 
-    private:
-        class channel;
-        struct recv_message;
-        struct send_message;
+private:
+	class channel;
+	struct recv_message;
+	struct send_message;
 
-    private:
-        int BUSYBEE_HIDDEN add_event(int fd, uint32_t events);
-        int BUSYBEE_HIDDEN wait_event(int* fd, uint32_t* events);
-        // Alert the threads to wake them up with eventfd
-        void BUSYBEE_HIDDEN up_the_semaphore();
-        busybee_returncode BUSYBEE_HIDDEN get_channel(uint64_t server_id, channel** chan, uint64_t* chan_tag);
-        busybee_returncode BUSYBEE_HIDDEN setup_channel(po6::net::socket* soc, channel* chan);
-        busybee_returncode BUSYBEE_HIDDEN possibly_work_send_or_recv(channel* chan);
-        bool BUSYBEE_HIDDEN work_dispatch(channel* chan, uint32_t events, busybee_returncode* rc);
-        void BUSYBEE_HIDDEN work_accept();
-        bool BUSYBEE_HIDDEN work_close(channel* chan, busybee_returncode* rc);
-        bool BUSYBEE_HIDDEN work_send(channel* chan, busybee_returncode* rc);
-        bool BUSYBEE_HIDDEN work_recv(channel* chan, busybee_returncode* rc);
-        bool BUSYBEE_HIDDEN state_transition(channel* chan, busybee_returncode* rc);
-        void BUSYBEE_HIDDEN handle_identify(channel* chan, bool* need_close, bool* clean_close);
-        void BUSYBEE_HIDDEN handle_fin(channel* chan, bool* need_close, bool* clean_close);
-        void BUSYBEE_HIDDEN handle_ack(channel* chan, bool* need_close, bool* clean_close);
-        bool BUSYBEE_HIDDEN send_finack(channel* chan);
+private:
+	int BUSYBEE_HIDDEN add_event(int fd, uint32_t events);
+	int BUSYBEE_HIDDEN wait_event(int *fd, uint32_t *events);
+	// Alert the threads to wake them up with eventfd
+	void BUSYBEE_HIDDEN up_the_semaphore();
+	busybee_returncode BUSYBEE_HIDDEN get_channel(uint64_t server_id, channel **chan, uint64_t *chan_tag);
+	busybee_returncode BUSYBEE_HIDDEN setup_channel(po6::net::socket *soc, channel *chan);
+	busybee_returncode BUSYBEE_HIDDEN possibly_work_send_or_recv(channel *chan);
+	bool BUSYBEE_HIDDEN work_dispatch(channel *chan, uint32_t events, busybee_returncode *rc);
+	void BUSYBEE_HIDDEN work_accept();
+	bool BUSYBEE_HIDDEN work_close(channel *chan, busybee_returncode *rc);
+	bool BUSYBEE_HIDDEN work_send(channel *chan, busybee_returncode *rc);
+	bool BUSYBEE_HIDDEN work_recv(channel *chan, busybee_returncode *rc);
+	bool BUSYBEE_HIDDEN state_transition(channel *chan, busybee_returncode *rc);
+	void BUSYBEE_HIDDEN handle_identify(channel *chan, bool *need_close, bool *clean_close);
+	void BUSYBEE_HIDDEN handle_fin(channel *chan, bool *need_close, bool *clean_close);
+	void BUSYBEE_HIDDEN handle_ack(channel *chan, bool *need_close, bool *clean_close);
+	bool BUSYBEE_HIDDEN send_finack(channel *chan);
 
-    private:
-        po6::io::fd m_epoll;
-        po6::net::socket m_listen;
-        size_t m_channels_sz;
-        e::array_ptr<channel> m_channels;
-        static uint64_t hash(const uint64_t& r)
-        {
-            return r;
-        }
-        e::garbage_collector* m_gc;
-        e::nwf_hash_map<uint64_t, uint64_t, hash> m_server2channel;
-        busybee_mapper* m_mapper;
-        uint64_t m_server_id;
-        po6::threads::mutex m_anon_lock;
-        uint32_t m_anon_id;
-        int m_timeout;
-        po6::threads::mutex m_recv_lock;
-        recv_message* m_recv_queue;
-        recv_message** m_recv_end;
-        recv_message* m_recv_queue_setaside;
-        recv_message** m_recv_end_setaside;
-        sigset_t m_sigmask;
-        po6::io::fd m_eventfdread;
-        po6::io::fd m_eventfdwrite;
-        po6::threads::mutex m_pause_lock;
-        po6::threads::cond m_pause_all_paused;
-        po6::threads::cond m_pause_may_unpause;
-        bool m_shutdown;
-        size_t m_pause_count;
-        uint32_t m_pause_paused;
-        size_t m_pause_num;
+private:
+	po6::io::fd m_epoll;
+	po6::net::socket m_listen;
+	size_t m_channels_sz;
+	e::array_ptr<channel> m_channels;
+	static uint64_t hash(const uint64_t &r)
+	{
+		return r;
+	}
+	e::garbage_collector *m_gc;
+	e::nwf_hash_map<uint64_t, uint64_t, hash> m_server2channel;
+	busybee_mapper *m_mapper;
+	uint64_t m_server_id;
+	po6::threads::mutex m_anon_lock;
+	uint32_t m_anon_id;
+	int m_timeout;
+	po6::threads::mutex m_recv_lock;
+	recv_message *m_recv_queue;
+	recv_message **m_recv_end;
+	recv_message *m_recv_queue_setaside;
+	recv_message **m_recv_end_setaside;
+	sigset_t m_sigmask;
+	po6::io::fd m_eventfdread;
+	po6::io::fd m_eventfdwrite;
+	po6::threads::mutex m_pause_lock;
+	po6::threads::cond m_pause_all_paused;
+	po6::threads::cond m_pause_may_unpause;
+	bool m_shutdown;
+	size_t m_pause_count;
+	uint32_t m_pause_paused;
+	size_t m_pause_num;
 
-    private:
-        busybee_mta(const busybee_mta&);
-        busybee_mta& operator = (const busybee_mta&);
+private:
+	busybee_mta(const busybee_mta &);
+	busybee_mta &operator = (const busybee_mta &);
 };
 
 #undef BUSYBEE_HIDDEN
