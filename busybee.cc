@@ -577,6 +577,7 @@ busybee_st :: set_external_fd(int fd)
 	assert(chan->state == channel::NOTCONNECTED);
 	if (add_event(fd, EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP) < 0 && errno != EEXIST)
 	{
+		chan->unlock();
 		return BUSYBEE_POLLFAILED;
 	}
 	chan->state = channel::EXTERNAL;
@@ -647,7 +648,6 @@ CLASSNAME :: drop(uint64_t server_id)
 	chan->state = channel::CRASHING;
 	busybee_returncode rc;
 	work_close(chan, &rc);
-	chan->unlock();
 	return BUSYBEE_SUCCESS;
 }
 
@@ -660,8 +660,7 @@ CLASSNAME :: send(uint64_t server_id,
 #endif // BUSYBEE_SINGLETHREADED
 	assert(msg->size() >= BUSYBEE_HEADER_SIZE);
 	assert(msg->size() <= BUSYBEE_MAX_MSG_SIZE);
-	uint32_t msg_size = static_cast<uint32_t>(msg->size());
-	msg->pack() << msg_size;
+	msg->pack() << static_cast<uint32_t>(msg->size());
 	std::auto_ptr<send_message> sm(new send_message(NULL, msg));
 	while (true)
 	{
@@ -677,7 +676,14 @@ CLASSNAME :: send(uint64_t server_id,
 		    chan->state < channel::CONNECTED ||
 		    chan->state > channel::IDENTIFIED)
 		{
-			chan->unlock();
+			if (chan->state == channel::CRASHING)
+			{
+				work_close(chan, &rc);
+			}
+			else
+			{
+				chan->unlock();
+			}
 			continue;
 		}
 		bool queue_was_free = !chan->sender_has_it;
@@ -793,12 +799,12 @@ CLASSNAME :: recv(
 				m_flagfd.clear();
 #endif // BUSYBEE_SINGLETHREADED
 			}
-#ifdef BUSYBEE_SINGLETHREADED
-			m_gc.quiescent_state(&m_gc_ts);
-#endif // BUSYBEE_SINGLETHREADED
 #ifdef BUSYBEE_MULTITHREADED
 			m_recv_lock.unlock();
 #endif // BUSYBEE_MULTITHREADED
+#ifdef BUSYBEE_SINGLETHREADED
+			m_gc.quiescent_state(&m_gc_ts);
+#endif // BUSYBEE_SINGLETHREADED
 			*id = m->id;
 			*msg = m->msg;
 			delete m;
@@ -1168,6 +1174,7 @@ CLASSNAME :: work_accept()
 }
 #endif // BUSYBEE_ACCEPT
 
+// work_close guarantees chan->unlock()
 bool
 CLASSNAME :: work_close(channel *chan, busybee_returncode *rc)
 {
@@ -1331,7 +1338,6 @@ CLASSNAME :: work_recv(channel *chan, busybee_returncode *rc)
 				continue;
 			}
 			chan->recver_has_it = false;
-			chan->unlock();
 			if (chan->recv_queue)
 			{
 #ifdef BUSYBEE_MULTITHREADED
@@ -1345,6 +1351,7 @@ CLASSNAME :: work_recv(channel *chan, busybee_returncode *rc)
 				m_flagfd.set();
 #endif // BUSYBEE_SINGLETHREADED
 			}
+			chan->unlock();
 			return true;
 		}
 		else if (rem == 0)

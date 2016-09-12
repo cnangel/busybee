@@ -5,6 +5,9 @@
 *.la
 *.lo
 *.o
+*.bak
+*.log
+*~
 # specific files
 /aclocal.m4
 /autom4te.cache/
